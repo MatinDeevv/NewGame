@@ -4,7 +4,7 @@ import Image from "next/image";
 
 export default function Home() {
   // State variables
-  const [clickBalance, setClickBalance] = useState(1); // Default value for clicks
+  const [clickBalance] = useState(1); // Default value for clicks (read-only)
   const [multiplier, setMultiplier] = useState(1); // Default multiplier
   const [balance, setBalance] = useState(0); // Total balance
 
@@ -18,15 +18,15 @@ export default function Home() {
   const upgrade = () => {
     if (balance >= 100) {
       setMultiplier(multiplier * 1.5);
-      setBalance(balance - 100);
-      console.log(`Multiplier upgraded to ${multiplier + 1}`);
+      setBalance(balance - multiplier * 100);
+      console.log(`Multiplier upgraded to ${multiplier * 1.5}`);
     } else {
       console.log("Not enough balance to upgrade!");
     }
   };
 
   // Check if enough balance for styling
-  const isAffordable = balance >= 100;
+  const isAffordable = balance >= multiplier * 100;
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center">
@@ -46,7 +46,7 @@ export default function Home() {
         }`}
         disabled={!isAffordable}
       >
-        Upgrade Multiplier ($100)
+        Upgrade Multiplier (Cost: ${multiplier * 200})
       </button>
     </div>
   );
