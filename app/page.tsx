@@ -1,7 +1,8 @@
 'use client';
 
-import supabase from '@/suppabaseClient';
+import supabase from '@/suppabaseClient'; // Correct the import to match your file structure
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation'; // Import the router for redirects
 import { User } from '@supabase/supabase-js'; // Import Supabase User type
 
 export default function GamePage() {
@@ -9,6 +10,7 @@ export default function GamePage() {
   const [multiplier, setMultiplier] = useState<number>(1); // Click multiplier
   const [user, setUser] = useState<User | null>(null); // Authenticated user
   const [loading, setLoading] = useState<boolean>(true);
+  const router = useRouter(); // Initialize the router for navigation
 
   // Fetch user info and balance
   useEffect(() => {
@@ -20,6 +22,7 @@ export default function GamePage() {
 
       if (error) {
         console.error('Error fetching user:', error.message);
+        router.push('/login'); // Redirect to login if no user is found
         return;
       }
 
@@ -44,14 +47,13 @@ export default function GamePage() {
     };
 
     fetchUserData();
-  }, []);
+  }, [router]);
 
   // Handle click to increment balance
   const handleClick = async () => {
     const newBalance = balance + multiplier;
     setBalance(newBalance);
 
-    // Update balance in the database
     const { error } = await supabase
       .from('profiles')
       .update({ balance: newBalance })
@@ -73,7 +75,6 @@ export default function GamePage() {
       setMultiplier(newMultiplier);
       setBalance(newBalance);
 
-      // Update multiplier and balance in the database
       const { error } = await supabase
         .from('profiles')
         .update({ multiplier: newMultiplier, balance: newBalance })
@@ -96,6 +97,7 @@ export default function GamePage() {
     );
   }
 
+  // Render the game page
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center">
       <h1 className="text-4xl font-bold mb-8">Welcome, {user?.email}</h1>

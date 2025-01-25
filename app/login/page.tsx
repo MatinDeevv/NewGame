@@ -76,7 +76,7 @@ const LoginPage = () => {
         if (error || !data?.username) {
           router.push('/choose-username');
         } else {
-          router.push('/game');
+          router.push('/');
         }
       }
     }
