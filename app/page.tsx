@@ -1,12 +1,14 @@
-
 'use client';
+
 import supabase from '@/suppabaseClient';
 import { useState, useEffect } from 'react';
+import { User } from '@supabase/supabase-js'; // Import Supabase User type
+
 export default function GamePage() {
-  const [balance, setBalance] = useState(0); // User balance
-  const [multiplier, setMultiplier] = useState(1); // Click multiplier
-  const [user, setUser] = useState<any>(null); // Authenticated user
-  const [loading, setLoading] = useState(true);
+  const [balance, setBalance] = useState<number>(0); // User balance
+  const [multiplier, setMultiplier] = useState<number>(1); // Click multiplier
+  const [user, setUser] = useState<User | null>(null); // Authenticated user
+  const [loading, setLoading] = useState<boolean>(true);
 
   // Fetch user info and balance
   useEffect(() => {
@@ -33,8 +35,8 @@ export default function GamePage() {
         if (profileError) {
           console.error('Error fetching profile:', profileError.message);
         } else {
-          setBalance(profile.balance || 0);
-          setMultiplier(profile.multiplier || 1);
+          setBalance(profile?.balance || 0);
+          setMultiplier(profile?.multiplier || 1);
         }
       }
 
@@ -53,7 +55,7 @@ export default function GamePage() {
     const { error } = await supabase
       .from('profiles')
       .update({ balance: newBalance })
-      .eq('id', user.id);
+      .eq('id', user?.id);
 
     if (error) {
       console.error('Error updating balance:', error.message);
@@ -75,7 +77,7 @@ export default function GamePage() {
       const { error } = await supabase
         .from('profiles')
         .update({ multiplier: newMultiplier, balance: newBalance })
-        .eq('id', user.id);
+        .eq('id', user?.id);
 
       if (error) {
         console.error('Error upgrading multiplier:', error.message);

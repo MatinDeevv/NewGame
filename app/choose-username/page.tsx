@@ -59,11 +59,15 @@ export default function ChooseUsernamePage() {
         setSuccessMessage('Username saved successfully! Redirecting to the game...');
         setTimeout(() => {
           router.push('/'); // Redirect to the game page
-        }, 20);
+        }, 2000);
       }
-    } catch (err: any) {
-      setErrorMessage('An unexpected error occurred. Please try again.');
-      console.error(err.message);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setErrorMessage(`An unexpected error occurred: ${err.message}`);
+      } else {
+        setErrorMessage('An unexpected error occurred. Please try again.');
+      }
+      console.error(err);
     }
   };
 
@@ -96,7 +100,7 @@ export default function ChooseUsernamePage() {
         <button
           onClick={handleUsernameSubmit}
           className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
-        >s
+        >
           Save Username
         </button>
       </div>
