@@ -1,52 +1,122 @@
+
 'use client';
-import { useState } from "react";
-import Image from "next/image";
+import supabase from '@/suppabaseClient';
+import { useState, useEffect } from 'react';
+export default function GamePage() {
+  const [balance, setBalance] = useState(0); // User balance
+  const [multiplier, setMultiplier] = useState(1); // Click multiplier
+  const [user, setUser] = useState<any>(null); // Authenticated user
+  const [loading, setLoading] = useState(true);
 
-export default function Home() {
-  // State variables
-  const [clickBalance] = useState(1); // Default value for clicks (read-only)
-  const [multiplier, setMultiplier] = useState(1); // Default multiplier
-  const [balance, setBalance] = useState(0); // Total balance
+  // Fetch user info and balance
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-  // Handler function for click
-  const handleClick = () => {
-    const newBalance = balance + clickBalance * multiplier;
+      if (error) {
+        console.error('Error fetching user:', error.message);
+        return;
+      }
+
+      setUser(user);
+
+      if (user) {
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('balance, multiplier')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile:', profileError.message);
+        } else {
+          setBalance(profile.balance || 0);
+          setMultiplier(profile.multiplier || 1);
+        }
+      }
+
+      setLoading(false);
+    };
+
+    fetchUserData();
+  }, []);
+
+  // Handle click to increment balance
+  const handleClick = async () => {
+    const newBalance = balance + multiplier;
     setBalance(newBalance);
-    console.log(`New Balance: ${newBalance}`);
-  };
 
-  const upgrade = () => {
-    if (balance >= 100) {
-      setMultiplier(multiplier * 1.5);
-      setBalance(balance - multiplier * 100);
-      console.log(`Multiplier upgraded to ${multiplier * 1.5}`);
-    } else {
-      console.log("Not enough balance to upgrade!");
+    // Update balance in the database
+    const { error } = await supabase
+      .from('profiles')
+      .update({ balance: newBalance })
+      .eq('id', user.id);
+
+    if (error) {
+      console.error('Error updating balance:', error.message);
     }
   };
 
-  // Check if enough balance for styling
-  const isAffordable = balance >= multiplier * 100;
+  // Handle multiplier upgrade
+  const handleUpgrade = async () => {
+    const upgradeCost = multiplier * 100;
+
+    if (balance >= upgradeCost) {
+      const newMultiplier = multiplier * 1.5;
+      const newBalance = balance - upgradeCost;
+
+      setMultiplier(newMultiplier);
+      setBalance(newBalance);
+
+      // Update multiplier and balance in the database
+      const { error } = await supabase
+        .from('profiles')
+        .update({ multiplier: newMultiplier, balance: newBalance })
+        .eq('id', user.id);
+
+      if (error) {
+        console.error('Error upgrading multiplier:', error.message);
+      }
+    } else {
+      console.log('Not enough balance to upgrade!');
+    }
+  };
+
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex flex-col items-center justify-center">
-      <h1 className="text-6xl mb-10 font-bold">Balance: ${balance.toFixed(2)}</h1>
+      <h1 className="text-4xl font-bold mb-8">Welcome, {user?.email}</h1>
+      <h2 className="text-3xl font-semibold mb-4">Balance: ${balance.toFixed(2)}</h2>
+      <h3 className="text-xl mb-8">Multiplier: x{multiplier.toFixed(2)}</h3>
+
       <button
         onClick={handleClick}
-        className="mb-6 p-4 rounded-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-400 hover:to-indigo-400 transition-all shadow-lg"
+        className="mb-6 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-500 transition-all"
       >
-        <Image src="/globe.svg" alt="Globe" width={200} height={200} />
+        Click to Earn ${multiplier.toFixed(2)}
       </button>
+
       <button
-        onClick={upgrade}
-        className={`mt-4 px-6 py-3 rounded-lg text-lg font-medium shadow-md transition-all ${
-          isAffordable
-            ? "bg-green-600 hover:bg-green-500 text-white"
-            : "bg-red-600 text-gray-200 cursor-not-allowed"
+        onClick={handleUpgrade}
+        disabled={balance < multiplier * 100}
+        className={`px-6 py-3 rounded-md text-lg font-medium transition-all ${
+          balance >= multiplier * 100
+            ? 'bg-blue-600 text-white hover:bg-blue-500'
+            : 'bg-red-600 text-gray-300 cursor-not-allowed'
         }`}
-        disabled={!isAffordable}
       >
-        Upgrade Multiplier (Cost: ${multiplier * 200})
+        Upgrade Multiplier (Cost: ${multiplier * 100})
       </button>
     </div>
   );
